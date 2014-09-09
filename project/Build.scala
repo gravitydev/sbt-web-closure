@@ -7,9 +7,9 @@ object ApplicationBuild extends Build {
 
   lazy val sbtWebGss = Project("sbt-web-gss", file("sbt-web-gss"))
     .settings(commonSettings:_*)
-    .settings(addSbtPlugin("com.typesafe.sbt" % "sbt-web" % "1.0.0"):_*)
+    .settings(addSbtPlugin("com.typesafe.sbt" % "sbt-web" % "1.1.0"):_*)
     .settings(
-      version := "0.0.1-SNAPSHOT",
+      version := "0.0.2-SNAPSHOT",
       sbtPlugin := true,
       libraryDependencies ++= Seq(
         "com.github.scala-incubator.io" %% "scala-io-file" % "0.4.2",
