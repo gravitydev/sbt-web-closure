@@ -1,2 +1,6 @@
 project/target/*
 sbt-web-gss/target/*
+.settings
+.project
+.classpath
+.cache
