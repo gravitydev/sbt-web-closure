@@ -1,7 +1,7 @@
 sbt-web-gss
 ===========
 
-Allows [closure-stylesheets](https://code.google.com/p/closure-stylesheets/) to be used from within sbt. No requirements on nodejs, or anything like that. All JVM.
+Allows [closure-stylesheets](https://code.google.com/p/closure-stylesheets/) to be used from within sbt. All JVM.
 To use this plugin use the addSbtPlugin command within your project's plugins.sbt (or as a global setting) i.e.:
 
 ```scala
@@ -16,7 +16,7 @@ Your project's build file also needs to enable sbt-web plugins. For example with
     
 Why Closure-Stylesheets?
 ------------------------
-It's lightweight, does the job, and doesn't require nodejs or anything else.
+It's lightweight, does the job, and doesn't require nodejs or anything else. All JVM.
 
 Configuring
 -----------
