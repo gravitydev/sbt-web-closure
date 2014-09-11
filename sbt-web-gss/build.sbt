@@ -2,7 +2,7 @@ name := "sbt-web-gss"
 
 organization := "com.gravitydev"
 
-version := "0.0.2-SNAPSHOT"
+version := "0.0.3-SNAPSHOT"
 
 sbtPlugin := true
 
@@ -40,7 +40,6 @@ libraryDependencies ++= Seq(
 )
 
 resolvers ++= Seq(
-  Resolver.file("Local ivy Repository", file("/home/alvaro/.ivy2/local/"))(Resolver.ivyStylePatterns),
   "devstack" at "https://devstack.io/repo/gravitydev/public",
   "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
   Classpaths.sbtPluginSnapshots,

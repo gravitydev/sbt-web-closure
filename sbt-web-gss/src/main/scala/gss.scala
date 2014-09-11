@@ -114,7 +114,7 @@ object SbtGss extends AutoPlugin {
       val pathsMap = ops map (x => 
         (x.absolutePath.stripPrefix(sourceDir.head.absolutePath).stripSuffix(".gss") + ".css") -> x
       )
-      log.debug("Paths: " + pathsMap)
+      log.info("Compiling " + ops.size + " gss files")
 
       val errs = java.util.Collections.synchronizedList(new java.util.ArrayList[Problem]())
 
@@ -151,8 +151,6 @@ object SbtGss extends AutoPlugin {
     CompileProblems.report((reporter in gss).value, res._2._2)
 
     import Cache.seqFormat
-
-    val prev = (gss in Assets).previous
 
     (gss in Assets).previous.getOrElse(Nil) ++ res._1
   }
