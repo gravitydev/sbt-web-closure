@@ -1,4 +1,4 @@
-package gss
+package com.gravitydev.sbt.gss
 
 import com.google.common.css.compiler.gssfunctions.DefaultGssFunctionMapProvider
 import com.google.common.css.GssFunctionMapProvider

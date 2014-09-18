@@ -1,15 +1,22 @@
+package com.gravitydev.sbt.closurejs
+
 import java.io.{File, InputStreamReader, StringWriter}
 import scala.collection.JavaConverters._
 import scalax.file.Path
 import com.google.javascript.rhino.Node
 import com.google.javascript.jscomp.{Compiler, CompilerOptions, ProcessCommonJSModules, CompilationLevel, CommandLineRunner, SourceFile,
-  DependencyOptions, CheckLevel, DiagnosticGroups, SourceMap}
+  DependencyOptions, CheckLevel, DiagnosticGroups, SourceMap, ErrorManager}
 import scala.io.Source
 import sbt._
 
+import java.util.concurrent.ConcurrentHashMap
+
 object ClosureJsCompiler {
+  // TODO: fine-grained dependency caching
+  val dependencyCache = new ConcurrentHashMap[File,Seq[File]]()
 
   def depInfo (source: File): (List[String], List[String]) = {
+    println("depInfo for: " + source)
     val code = Path(source).string.replaceAll( "//.*|(\"(?:\\\\[^\"]|\\\\\"|.)*?\")|(?s)/\\*.*?\\*/", "$1 " )
 
     val pro = """goog\.provide\(\s*['\"]([^'\"]+)['\"]\s*\);""".r.findAllIn(code).matchData.map(_ group 1).toList
@@ -19,34 +26,42 @@ object ClosureJsCompiler {
   }
 
   def dependencies (source: File, sources: PathFinder): Seq[File] = {
-    val jsFiles = Seq(source) ++ sources.get
-
-    // file to modules
-    val requires = jsFiles map {
-      f => f.getAbsolutePath -> depInfo(f)._2
-    } toMap
-   
-    // module to file
-    val provides = jsFiles flatMap {
-      f => depInfo(f)._1 map (_ -> f.getAbsolutePath)
-    } toMap
-
-    val sourcePath = source.getAbsolutePath
-
-    def getFileDeps (file: String, deps: Set[String] = Set()): Set[String] = {
-      if (deps contains file) deps
-      else {
-        val deps2 = deps + file 
-        
-        deps2 ++ (requires(file) flatMap {r =>
-          getFileDeps(provides(r), deps2) 
-        })
+    println("Finding dependencies for: " + source)
+    Option(dependencyCache.get(source)) getOrElse {
+      val jsFiles = Seq(source) ++ sources.get
+  
+      // file to modules
+      val requires = jsFiles map {
+        f => f.getAbsolutePath -> depInfo(f)._2
+      } toMap
+     
+      // module to file
+      val provides = jsFiles flatMap {
+        f => depInfo(f)._1 map (_ -> f.getAbsolutePath)
+      } toMap
+  
+      val sourcePath = source.getAbsolutePath
+  
+      def getFileDeps (file: String, deps: Set[String] = Set()): Set[String] = {
+        if (deps contains file) deps
+        else {
+          val deps2 = deps + file 
+          
+          deps2 ++ (requires(file) flatMap {r =>
+            getFileDeps(provides(r), deps2) 
+          })
+        }
       }
+  
+      var res = getFileDeps(sourcePath).toList map (x => new File(x))
+      
+      // cache if it's part of closure lib
+      // very hacky, TODO: better caching
+      //if (source.absolutePath.contains("closure-library")) dependencyCache.put(source, res)
+      dependencyCache.put(source, res)
+      
+      res
     }
-
-    var res = getFileDeps(sourcePath)
-
-    res.toList map (x => new File(x))
   }
 
   /**
@@ -55,7 +70,14 @@ object ClosureJsCompiler {
    * @param source
    * @param fullCompilerOptions user supplied full blown CompilerOptions instance
    */
-  def compile (source: File, sources: PathFinder, closureLibraryDir: File, locationMappings: List[(String,String)]): (String, Option[String], Seq[File], String) = {
+  def compile (
+    source: File, 
+    sources: PathFinder, 
+    closureLibraryDir: File, 
+    locationMappings: List[(String,String)],
+    prettyPrint: Boolean,
+    pseudoNames: Boolean
+  ): (String, Seq[File], ErrorManager) = {
     import scala.util.control.Exception._
 
     val origin = Path(source).string
@@ -72,8 +94,8 @@ object ClosureJsCompiler {
      
       CompilationLevel.ADVANCED_OPTIMIZATIONS.setOptionsForCompilationLevel(o)
       CompilationLevel.ADVANCED_OPTIMIZATIONS.setTypeBasedOptimizationOptions(o)
-      o setPrettyPrint                  true
-      o setGeneratePseudoNames          true
+      o setPrettyPrint                  prettyPrint
+      o setGeneratePseudoNames          pseudoNames
       o setAggressiveVarCheck           CheckLevel.ERROR
       //o setTightenTypes                 true // crashes compiler
       o setReportMissingOverride        CheckLevel.ERROR
@@ -123,30 +145,20 @@ object ClosureJsCompiler {
     // gears externs crash the compiler
     val externs = CommandLineRunner.getDefaultExterns().asScala.filter(_.toString != "externs.zip//gears_symbols.js")
 
-    try {
-      val res = compiler.compile(externs.asJava, input.asJava, options) 
-  
-      if (res.success) {
-        res.sourceMap.reset();
-        val compiledSource = compiler.toSource
-        
-        val w = new StringWriter();
-        res.sourceMap.appendTo(w, "/assets/javascripts/designer.min.js")
-        
-        (origin, Some(compiledSource), all, w.toString)
-      } else {
-        val error = compiler.getErrors().head
-        val errorFile = all.find(f => f.getAbsolutePath() == error.sourceName)
-	???
-        //throw AssetCompilationException(errorFile, error.description, Some(error.lineNumber), None)
-      }  
-    } catch {
-      case ex: Exception => {
-        throw ex
-        //ex.printStackTrace()
-        //throw AssetCompilationException(Some(source), "Internal Closure Compiler error (see logs)", None, None)
-      }
-    }   
+    val res = compiler.compile(externs.asJava, input.asJava, options) 
+
+    if (res.success) {
+      res.sourceMap.reset();
+      val compiledSource = compiler.toSource
+      
+      /*
+      val w = new StringWriter();
+      res.sourceMap.appendTo(w, "/assets/javascripts/designer.min.js")
+      */
+      (compiledSource, all, compiler.getErrorManager)
+    } else {
+      ("", Nil, compiler.getErrorManager)
+    }    
   }
 
   /**
@@ -156,7 +168,7 @@ object ClosureJsCompiler {
    */
   private def toModuleName(filename: String) = {
     //"module$" + filename.replaceAll("^\\./", "").replaceAll("/", "\\$").replaceAll("\\.js$", "").replaceAll("-", "_");
-    "module." + filename.replaceAll("^\\./", "").replaceAll("/", "\\$").replaceAll("\\.js$", "").replaceAll("-", "_");
+    "module." + filename.stripSuffix(".module.js").replaceAll("^\\./", "").replaceAll("/", "\\$").replaceAll("-", "_");
   }
 
 }

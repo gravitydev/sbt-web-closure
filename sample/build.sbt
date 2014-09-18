@@ -14,3 +14,12 @@ libraryDependencies ++= Seq(
   cache,
   ws
 )
+
+ClosureJsKeys.closureJsSourceMapLocationMappings := List(
+  ((baseDirectory in Compile).value / "public").getAbsolutePath -> "/assets", // strip root path
+  (sourceDirectory in Compile).value.getAbsolutePath -> ""
+)
+
+ClosureJsKeys.closureLibraryDirectory := (baseDirectory in Compile).value / "public" / "closure-library"
+
+includeFilter in ClosureJsKeys.closureJs in Assets := "*.module.js"
