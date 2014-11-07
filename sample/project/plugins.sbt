@@ -13,5 +13,5 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-twirl" % "1.0.2")
 
 addSbtPlugin("com.gravitydev" % "sbt-web-gss" % "0.0.2-SNAPSHOT")
 
-addSbtPlugin("com.gravitydev" % "sbt-web-closurejs" % "0.0.1-SNAPSHOT")
+addSbtPlugin("com.gravitydev" % "sbt-web-closurejs" % "0.0.2-SNAPSHOT")
 
