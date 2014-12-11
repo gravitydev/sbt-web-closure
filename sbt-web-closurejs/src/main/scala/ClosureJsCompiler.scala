@@ -31,13 +31,13 @@ object ClosureJsCompiler {
       val jsFiles = Seq(source) ++ sources.get
   
       // file to modules
-      val requires = jsFiles map {
+      val requires: Map[String,List[String]] = jsFiles map {
         f => f.getAbsolutePath -> depInfo(f)._2
       } toMap
      
       // module to file
-      val provides = jsFiles flatMap {
-        f => depInfo(f)._1 map (_ -> f.getAbsolutePath)
+      val provides: Map[String,String] = jsFiles flatMap {f => 
+        depInfo(f)._1 map (_ -> f.getAbsolutePath)
       } toMap
   
       val sourcePath = source.getAbsolutePath
@@ -48,7 +48,8 @@ object ClosureJsCompiler {
           val deps2 = deps + file 
           
           deps2 ++ (requires(file) flatMap {r =>
-            getFileDeps(provides(r), deps2) 
+            if (r.startsWith("goog.")) Nil // don't track closure deps, google service does that
+            else getFileDeps(provides(r), deps2) 
           })
         }
       }
@@ -172,3 +173,4 @@ object ClosureJsCompiler {
   }
 
 }
+

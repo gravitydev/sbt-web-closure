@@ -22,4 +22,6 @@ ClosureJsKeys.closureJsSourceMapLocationMappings := List(
 
 ClosureJsKeys.closureLibraryDirectory := (baseDirectory in Compile).value / "public" / "closure-library"
 
-includeFilter in ClosureJsKeys.closureJs in Assets := "*.module.js"
+includeFilter in ClosureJsKeys.closureJs in Assets := "*.page.js"
+
+mappings in Assets := (mappings in resources in Assets).value ++ (mappings in WebKeys.webModules in Assets).value
