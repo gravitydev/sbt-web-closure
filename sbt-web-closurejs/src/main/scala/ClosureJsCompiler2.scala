@@ -123,10 +123,14 @@ object ClosureJsCompiler2 {
     implicit val lineFatalF = Json.format[LineFatal]
     implicit val lineWarningF = Json.format[LineWarning]
 
-    (res \ "errors").validate[List[LineFatal]].fold(
-      _ => ((res \ "compiledCode").as[String], deps, (res \ "warnings").validate[List[LineWarning]].fold(x => Nil, identity)),
-      errors => ("", Nil, errors)
-    )
+    try {
+      (res \ "errors").validate[List[LineFatal]].fold(
+        _ => ((res \ "compiledCode").as[String], deps, (res \ "warnings").validate[List[LineWarning]].fold(x => Nil, identity)),
+        errors => ("", Nil, errors)
+      )
+    } catch {
+      case e => println(res); throw e;
+    }
    
     /* 
     if (res.success) {

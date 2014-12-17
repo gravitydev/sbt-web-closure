@@ -4,7 +4,7 @@ version := "1.0-SNAPSHOT"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
-scalaVersion := "2.11.1"
+scalaVersion := "2.11.4"
 
 excludeFilter in GssKeys.gss in Assets := new SimpleFileFilter(_.getParentFile.getName == "includes")
 
@@ -23,5 +23,7 @@ ClosureJsKeys.closureJsSourceMapLocationMappings := List(
 ClosureJsKeys.closureLibraryDirectory := (baseDirectory in Compile).value / "public" / "closure-library"
 
 includeFilter in ClosureJsKeys.closureJs in Assets := "*.page.js"
+
+excludeFilter in Assets := "*.js"
 
 mappings in Assets := (mappings in resources in Assets).value ++ (mappings in WebKeys.webModules in Assets).value

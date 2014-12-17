@@ -37,7 +37,7 @@ object ClosureJsPlugin extends AutoPlugin {
     closureJs := compileClosureJs.value,
     managedResourceDirectories in Assets += (resourceManaged in closureJs in Assets).value,
     resourceManaged in closureJs in Assets := webTarget.value / closureJs.key.label / "main",
-    (resourceGenerators in Assets) <+= closureJs,
+    (sourceGenerators in Assets) <+= closureJs,
     (includeFilter in closureJs in Assets) := UncompiledJsFileFilter,
     (excludeFilter in closureJs in Assets) := HiddenFileFilter,
     closureJsPrettyPrint := false,
