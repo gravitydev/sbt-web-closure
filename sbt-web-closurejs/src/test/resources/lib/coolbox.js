@@ -1,7 +1,8 @@
 goog.provide('lib.CoolBox');
 
-/** @constructor */
-lib.CoolBox = function () {
 
-};
+lib.CoolBox = class {
+
+}
+
 

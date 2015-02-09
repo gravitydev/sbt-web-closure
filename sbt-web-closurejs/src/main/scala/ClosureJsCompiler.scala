@@ -97,6 +97,9 @@ object ClosureJsCompiler {
 
     val options = {
       val o = new CompilerOptions()
+
+      o.setLanguageIn(CompilerOptions.LanguageMode.ECMASCRIPT6)
+      o.setLanguageOut(CompilerOptions.LanguageMode.ECMASCRIPT3)
      
       CompilationLevel.ADVANCED_OPTIMIZATIONS.setOptionsForCompilationLevel(o)
       CompilationLevel.ADVANCED_OPTIMIZATIONS.setTypeBasedOptimizationOptions(o)

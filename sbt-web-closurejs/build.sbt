@@ -2,7 +2,7 @@ name := "sbt-web-closurejs"
 
 organization := "com.gravitydev"
 
-version := "0.0.3-service8-SNAPSHOT"
+version := "0.0.3-es6-SNAPSHOT"
 
 sbtPlugin := true
 
