@@ -9,7 +9,7 @@ class ClosureSpec extends FlatSpec with Matchers {
     val lib = new java.io.File(getClass.getResource("/lib").toURI)
     val file = new java.io.File(getClass.getResource("/test.js").toURI)
 
-    val result = ClosureJsCompiler2.compile(file, lib ** "*.js", false, false)
+    val result = ClosureJsCompiler2.compile(file, (lib ** "*.js").get, false, false)
 
     println(result)
 
