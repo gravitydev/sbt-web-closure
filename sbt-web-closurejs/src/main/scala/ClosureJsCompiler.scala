@@ -25,19 +25,23 @@ object ClosureJsCompiler {
     (pro, req)
   }
 
-  def dependencies (source: File, sources: PathFinder): Seq[File] = {
+  def dependencies (source: File, librarySources: Seq[File]): Seq[File] = {
     println("Finding dependencies for: " + source)
+    println(librarySources)
     Option(dependencyCache.get(source)) getOrElse {
-      val jsFiles = Seq(source) ++ sources.get
-  
+ 
+      val sources = Seq(source) ++ librarySources 
+
       // file to modules
-      val requires: Map[String,List[String]] = jsFiles map {
-        f => f.getAbsolutePath -> depInfo(f)._2
+      val requires = sources map {f => 
+        f.getAbsolutePath -> depInfo(f)._2 // .filter(x => !x.startsWith("goog."))
       } toMap
+
+      println(requires)
      
       // module to file
-      val provides: Map[String,String] = jsFiles flatMap {f => 
-        depInfo(f)._1 map (_ -> f.getAbsolutePath)
+      val provides = sources flatMap {
+        f => depInfo(f)._1 map (_ -> f.getAbsolutePath)
       } toMap
   
       val sourcePath = source.getAbsolutePath
@@ -48,13 +52,12 @@ object ClosureJsCompiler {
           val deps2 = deps + file 
           
           deps2 ++ (requires(file) flatMap {r =>
-            if (r.startsWith("goog.")) Nil // don't track closure deps, google service does that
-            else getFileDeps(provides(r), deps2) 
+            getFileDeps(provides(r), deps2) 
           })
         }
       }
   
-      var res = getFileDeps(sourcePath).toList map (x => new File(x))
+      var res = getFileDeps(sourcePath).toList map (x => new File(x)) filterNot (_ == source)
       
       // cache if it's part of closure lib
       // very hacky, TODO: better caching
@@ -73,13 +76,15 @@ object ClosureJsCompiler {
    */
   def compile (
     source: File, 
-    sources: PathFinder, 
+    sources: Seq[File], 
     closureLibraryDir: File, 
     locationMappings: List[(String,String)],
     prettyPrint: Boolean,
     pseudoNames: Boolean
   ): (String, Seq[File], ErrorManager) = {
     import scala.util.control.Exception._
+
+    println(sources)
 
     val origin = Path(source).string
 
@@ -88,7 +93,7 @@ object ClosureJsCompiler {
       closureLibraryDir / "closure" / "goog" / "deps.js"
     ) ++ dependencies(source, sources) 
 
-    val input = all map (x => SourceFile.fromFile(x))
+    val input = (all map (x => SourceFile.fromFile(x))) ++ Seq(SourceFile.fromFile(source))
 
     val options = {
       val o = new CompilerOptions()
@@ -138,7 +143,7 @@ object ClosureJsCompiler {
         locationMappings map {case (k,v) => new SourceMap.LocationMapping(k, v)} asJava
       )
 
-      o.setManageClosureDependencies(Seq(toModuleName(source.getName())).asJava)
+      //o.setManageClosureDependencies(Seq(toModuleName(source.getName())).asJava)
       o
     }
 

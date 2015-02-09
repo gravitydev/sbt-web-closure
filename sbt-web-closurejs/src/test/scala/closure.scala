@@ -7,9 +7,12 @@ import scala.collection.JavaConverters._
 class ClosureSpec extends FlatSpec with Matchers {
   "Compilation" should "work" in {
     val lib = new java.io.File(getClass.getResource("/lib").toURI)
-    val file = new java.io.File(getClass.getResource("/test.js").toURI)
+    val inputFile = new java.io.File(getClass.getResource("/test.js").toURI)
+    val closureLib = file("/home/alvaro/workspace/gravity/closure-library")
 
-    val result = ClosureJsCompiler2.compile(file, (lib ** "*.js").get, false, false)
+    println((closureLib ** "*.js").get)
+
+    val result = ClosureJsCompiler.compile(inputFile, (closureLib ** "*.js").get ++ (lib ** "*.js").get, closureLib, Nil, false, false)
 
     println(result)
 
